@@ -1,0 +1,132 @@
+diff --git a/Papyrus/Source/Scripts/diffs/dbmdisplayautosorter.psc b/Papyrus/Source/Scripts/dbmdisplayautosorter.psc
+index 11c05b8..7088147 100644
+--- a/Papyrus/Source/Scripts/diffs/dbmdisplayautosorter.psc
++++ b/Papyrus/Source/Scripts/dbmdisplayautosorter.psc
+@@ -1,6 +1,8 @@
+ Scriptname DBMDisplayAutoSorter extends ObjectReference Conditional
+ {Master sorting script for Dragonborn Gallery v5.0 }
+ 
++import JZCL_TCCHelperFunctions
++
+ DBM_MuseumAPI Property DBM_MuseumUtility Auto
+ ;DBM_SKSESupport Property SKSE64 Auto
+ ;DBM_SharedData Property Sharing Auto
+@@ -144,92 +146,35 @@ Auto State Ready
+ 			if (bPlayerActivation)
+ 				DBM_SortStartMSG.Show()
+ 			endif
+-			int iRoomTotal = RoomList.Length
+-			int iCurRoom; Currently processing room.
+-			int iNewDisplays = 0 ;Recorded new displays.
++
++			int iNewDisplays = 0
++			AddSearchSection(SectionList, SectionNames, SectionItems, SectionItemsAlt)
++			AddSearchSection(SectionList2, SectionNames2, SectionItems2, SectionItemsAlt2)
++			AddSearchSection(SectionList3, SectionNames3, SectionItems3, SectionItemsAlt3)
++			AddSearchSection(SectionList4, SectionNames4, SectionItems4, SectionItemsAlt4)
+ 			
+-			while iCurRoom < iRoomTotal
+-				Formlist flRoom = RoomList[iCurRoom] as Formlist
+-				String sRoomName = RoomNames[iCurRoom]
+-				;DBMDebug.Log(Self, "Auto sorting room: "+sRoomName+iCurRoom)
+-				if flRoom ;check if we have a valid room. 
+-					int iSectionTotal = flRoom.GetSize()
+-					int iCurSection = 0
+-					
+-					while iCurSection < iSectionTotal
+-						Formlist flSection = flRoom.GetAt(iCurSection) as FormList ;Get the section in this room, containing references. 
+-					
+-						;; Set the main arrays but change them later if required. 5.1.0+
+-						FormList[] DisplayList = SectionList
+-						String[] NameList = SectionNames
+-						FormList[] ItemList = SectionItems
+-						FormList[] AltItemList = SectionItemsAlt
+-						Int iSectionIndex = SectionList.Find(flSection)
++			If (!DBMSectionSearch(RoomList, RoomNames, akActionRef))
++				Debug.Messagebox("Critical Autosorter error, operation aborted.")
++				; Was not resetting the state on a catastrophic failure. 
++				DBM_SortWait.SetValue(0)
++				GoToState("Ready")
++				Return
++			EndIf
+ 
+-						; 5.6.0 include lookup for all 4 arrays!
+-						if (SectionList.Find(flSection) != -1)
+-							DisplayList = SectionList
+-							NameList = SectionNames
+-							ItemList = SectionItems
+-							AltItemList = SectionItemsAlt
+-							iSectionIndex = SectionList.Find(flSection)
+-						elseif (SectionList2.Find(flSection) != -1)
+-							DisplayList = SectionList2
+-							NameList = SectionNames2
+-							ItemList = SectionItems2
+-							AltItemList = SectionItemsAlt2
+-							iSectionIndex = SectionList2.Find(flSection)
+-						elseif (SectionList3.Find(flSection) != -1)
+-							DisplayList = SectionList3
+-							NameList = SectionNames3
+-							ItemList = SectionItems3
+-							AltItemList = SectionItemsAlt3
+-							iSectionIndex = SectionList3.Find(flSection)
+-						elseif (SectionList3.Find(flSection) != -1)
+-							DisplayList = SectionList4
+-							NameList = SectionNames4
+-							ItemList = SectionItems4
+-							AltItemList = SectionItemsAlt4
+-							iSectionIndex = SectionList4.Find(flSection)
+-						else
+-							;; List isn't in either array. Critical error.
+-							DBMDebug.Log(Self, "Could not find "+flSection+" in the main or reserve arrays. Aborting sorter.", 2)
+-							Debug.Trace("LOTD Sorter - Could not find "+flSection+" in the main or reserve arrays. Aborting sorter.", 2)
+-							Debug.Messagebox("Critical Autosorter error, operation aborted.")
+-							; Was not resetting the state on a catastrophic failure. 
+-							DBM_SortWait.SetValue(0)
+-							GoToState("Ready")
+-							Return
+-						endif
+-						
+-						String sSectionName = NameList[iSectionIndex] ;Get the section name.
+-						Formlist flItems = ItemList[iSectionIndex] as FormList ;Get the item list
+-						Formlist flItemsAlt = AltItemList[iSectionIndex] as FormList ;Get the replica and alt item list
+-						
+-						if akActionRef.GetItemCount(flItems) || (!flItemsAlt ||akActionRef.GetItemCount(flItemsAlt))
+-							int iItemTotal = akActionRef.GetItemCount(flItems)
+-							if flItemsAlt
+-								;DBMDebug.Log(Self,"Adding "+ akActionRef.GetItemCount(flItemsAlt) +" to current iItemTotal of "+iItemTotal)
+-								iItemTotal += akActionRef.GetItemCount(flItemsAlt) ;Add alt items if applicable.
+-							endif
+-							if iItemTotal
+-								DBMDebug.Log(Self, "Auto sorting "+sSectionName+" in "+sRoomName+" for a total item count of "+iItemTotal)
+-								int iListNewDisplays = (SortDisplays(flSection, flItems,flItemsAlt, iItemTotal, akActionRef))
+-								; If we added any new displays, send a mod event. 
+-								if (iListNewDisplays && useSKSE)
+-									DBMDebug.SendDisplayListUpdated(Self, flSection, flItems, flItemsAlt)
+-								endif
+-								iNewDisplays += iListNewDisplays
+-							endif
+-						endif
+-						
+-						iCurSection += 1
+-					endwhile
+-				endif
++			While (NextSectionSearchResult())
++				FormList[] aSectionFormLists = GetSectionSearchFormList()
++				int iItemTotal = GetSectionSearchItemTotal()
+ 				
+-				iCurRoom += 1
+-				
+-			endwhile
++				int iListNewDisplays = (SortDisplays(aSectionFormLists[0], aSectionFormLists[1], aSectionFormLists[2], iItemTotal, akActionRef))
++				; If we added any new displays, send a mod event. 
++				if (iListNewDisplays && useSKSE)
++					DBMDebug.SendDisplayListUpdated(Self, aSectionFormLists[0], aSectionFormLists[1], aSectionFormLists[2])
++				endif
++				iNewDisplays += iListNewDisplays
++			EndWhile
++			ClearSectionSearch()
++
++
+ 			DBM_SortWait.SetValue(0)
+ 			GoToState("Ready")
+ 			if (bPlayerActivation)

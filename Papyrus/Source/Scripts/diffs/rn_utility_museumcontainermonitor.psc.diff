@@ -1,0 +1,70 @@
+diff --git a/Papyrus/Source/Scripts/diffs/rn_utility_museumcontainermonitor.psc b/Papyrus/Source/Scripts/rn_utility_museumcontainermonitor.psc
+index f01f974..0682e89 100644
+--- a/Papyrus/Source/Scripts/diffs/rn_utility_museumcontainermonitor.psc
++++ b/Papyrus/Source/Scripts/rn_utility_museumcontainermonitor.psc
+@@ -1,5 +1,7 @@
+ ScriptName RN_Utility_MuseumContainerMonitor extends ObjectReference
+ 
++import JZCL_TCCHelperFunctions
++
+ RN_PatchAPI property API auto
+ RN_Utility_MCM property RN_MCM auto
+ RN_Utility_Script property RN_Utility auto
+@@ -56,52 +58,14 @@ function updateFormlists(form akBaseItem, bool added, ObjectReference akContaine
+ 		endIf
+ 	endIf
+ 	
+-	ProcessReplica(akBaseItem, added, akContainer)
++	ProcessReplicaAndVariants(akBaseItem, added, akContainer)
+ endFunction
+ 
+-function ProcessReplica(form akBaseItem, bool added, ObjectReference akContainer = none)
+-		
++function ProcessReplicaAndVariants(form akBaseItem, bool added, ObjectReference akContainer = none)
+ 	if (added)
+-		if (DBM_ReplicaBaseItems.HasForm(akBaseitem))
+-			Form rReplica = (ReplicaHandler.GetReplica(akBaseItem))	
+-			if (!rReplica as Formlist)
+-				dbmDisp.AddForm(rReplica)
+-				dbmFound.RemoveAddedForm(rReplica)
+-				dbmNew.RemoveAddedForm(rReplica)
+-			endIf
+-			
+-		elseif (DBM_ReplicaItems.HasForm(akBaseitem))
+-			Form rOriginal = (ReplicaHandler.GetOriginal(akBaseItem))
+-			if (!rOriginal as Formlist)
+-				dbmDisp.AddForm(rOriginal)
+-				dbmFound.RemoveAddedForm(rOriginal)
+-				dbmNew.RemoveAddedForm(rOriginal)
+-			endif
+-		endIf
+-		
+-	else
+-		if (DBM_ReplicaBaseItems.HasForm(akBaseitem))	
+-			Form rReplica = (ReplicaHandler.GetReplica(akBaseItem))	
+-			if (!rReplica as Formlist)
+-				dbmDisp.RemoveAddedForm(rReplica)
+-				if (API.TokenRefList.Find(akContainer) == -1)
+-					dbmNew.AddForm(rReplica)
+-				else
+-					dbmFound.AddForm(rReplica)
+-				endIf
+-			endif
+-			
+-		elseif (DBM_ReplicaItems.HasForm(akBaseitem))
+-			Form rOriginal = (ReplicaHandler.GetOriginal(akBaseItem))
+-			if (!rOriginal as Formlist)
+-				dbmDisp.RemoveAddedForm(rOriginal)
+-				if (API.TokenRefList.Find(akContainer) == -1)
+-					dbmNew.AddForm(rOriginal)
+-				else
+-					dbmFound.AddForm(rOriginal)
+-				endIf	
+-			endif
+-		endIf	
++		ReplicaAndVariantsAddHandler(akBaseItem)
++	Else
++		ReplicaAndVariantsRemoveHandler(akBaseItem, API.TokenRefList, akContainer)	
+ 	endIf		
+ endFunction
+ 

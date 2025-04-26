@@ -1,0 +1,103 @@
+diff --git a/Papyrus/Source/Scripts/diffs/rn_utility_script.psc b/Papyrus/Source/Scripts/rn_utility_script.psc
+index 2c7daa7..b2306e5 100644
+--- a/Papyrus/Source/Scripts/diffs/rn_utility_script.psc
++++ b/Papyrus/Source/Scripts/rn_utility_script.psc
+@@ -8,6 +8,7 @@ import AhzMoreHud
+ import AhzMoreHudIE
+ import RN_Utility_Global
+ import utility
++import JZCL_TCCHelperFunctions
+ 
+ RN_PatchAPI property API auto
+ RN_Utility_MCM property RN_MCM auto
+@@ -162,70 +163,13 @@ function CreateMoreHudLists()
+ 	
+ 	TCCDebug.Log("Utility - Updating moreHUD Lists...", 0)
+ 	
+-	Int _Index = _MuseumContainerList.GetSize()	;;Check museum containers for displayed items.	
+-	While _Index 
+-		_Index -= 1
+-		ObjectReference _Container = _MuseumContainerList.GetAt(_Index) as ObjectReference
+-		if _Container
+-			TCCDebug.Log("Utility - Updating items in [" + _Container.GetBaseObject().GetName() + "]" + _Container, 0)
+-			Int _Index2 = _Container.GetNumItems()
+-			while _Index2
+-				_Index2 -= 1		
+-				Form _ItemRelic = _Container.GetNthForm(_Index2)
+-				if dbmNew.HasForm(_ItemRelic) && !dbmDisp.HasForm(_ItemRelic) || dbmFound.HasForm(_ItemRelic) && !dbmDisp.HasForm(_ItemRelic) 
+-					dbmNew.RemoveAddedForm(_ItemRelic)
+-					dbmFound.RemoveAddedForm(_ItemRelic)
+-					dbmDisp.AddForm(_ItemRelic)
+-					ProcessReplica(_ItemRelic)
+-				endIf
+-			endWhile
+-		endif
+-	endWhile
+-			
+-	_Index = API.TokenRefList.length ;; Check player and custom storage for found items.
+-	While _Index
+-		_Index -= 1
+-		ObjectReference _Container = API.TokenRefList[_Index] as ObjectReference		
+-		if _Container
+-			TCCDebug.Log("Utility - Updating items in [" + _Container.GetBaseObject().GetName() + "]" + _Container, 0)
+-
+-			Int _Index2 = _Container.GetNumItems()
+-			While _Index2
+-				_Index2 -= 1
+-				Form _ItemRelic = _Container.GetNthForm(_Index2)
+-				if dbmNew.HasForm(_ItemRelic) && !dbmDisp.HasForm(_ItemRelic)
+-					dbmNew.RemoveAddedForm(_ItemRelic)
+-					dbmFound.AddForm(_ItemRelic)
+-				endIf
+-			endWhile
+-		endif
+-	endWhile			
++	updateMoreHUDLists(API.TokenRefList)
+ 	
+ 	bMoreHUDListsCreated = true
+ 	
+ 	TCCDebug.Log("Utility - moreHUD Lists Updated", 0)
+ endFunction
+ 
+-function ProcessReplica(form _ItemRelic)
+-
+-	if DBM_ReplicaBaseItems.HasForm(_ItemRelic)
+-		Form rReplica = (ReplicaHandler.GetReplica(_ItemRelic))
+-		if (!rReplica as Formlist)
+-			dbmNew.RemoveAddedForm(ReplicaHandler.GetReplica(_ItemRelic))
+-			dbmFound.RemoveAddedForm(ReplicaHandler.GetReplica(_ItemRelic))
+-			dbmDisp.AddForm(ReplicaHandler.GetReplica(_ItemRelic))
+-		endif
+-			
+-	elseif DBM_ReplicaItems.HasForm(_ItemRelic)	
+-		Form rOriginal = (ReplicaHandler.GetOriginal(_ItemRelic))
+-		if (!rOriginal as Formlist)
+-			dbmNew.RemoveAddedForm(ReplicaHandler.GetOriginal(_ItemRelic))
+-			dbmFound.RemoveAddedForm(ReplicaHandler.GetOriginal(_ItemRelic))
+-			dbmDisp.AddForm(ReplicaHandler.GetOriginal(_ItemRelic))
+-		endif
+-	endIf
+-endFunction
+-
+ ;;-- Events ---------------------------------------
+ 
+ function InitGlobals()
+@@ -378,17 +322,7 @@ Function RebuildLists()
+ 	dbmFound.revert()
+ 	dbmDisp.revert()	
+ 	
+-	Int _Total = dbmMaster.GetSize()
+-	Int _Index = 0
+-	While _Index < _Total
+-		form _item = dbmMaster.GetAt(_Index) as form
+-		dbmNew.AddForm(_item)
+-
+-		if (_Index % 500 == 0) 
+-			Notify("The Curators Companion: Rebuilding moreHUD lists... (" + _Index + " / " + _Total + ")", RN_MCM.ColourString)
+-		endIf
+-		_Index += 1
+-	endWhile
++	RepopulateDbmNew()
+ 	
+ 	CreateMoreHudLists()
+ 
