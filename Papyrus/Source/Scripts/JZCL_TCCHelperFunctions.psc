@@ -1,14 +1,5 @@
 Scriptname JZCL_TCCHelperFunctions Hidden
 
-; search in FormList and direct sub FormList, if found return index, otherwise return -1
-int Function FormListLevel2Search(Form akForm, FormList akList) global native
-
-; add item in sourceList to targetList
-Function FormListAdd(FormList targetList, FormList sourceList) global native
-
-; remove item in sourceList from targetList
-Function FormListSub(FormList targetList, FormList sourceList) global native
-
 Function ReplicaAndVariantsAddHandler(Form akForm) global native
 
 Function ReplicaAndVariantsRemoveHandler(Form akForm, ObjectReference[] akTokenRefList, ObjectReference akContainer) global native
@@ -35,3 +26,9 @@ FormList[] Function GetSectionSearchFormList() global native
 int Function GetSectionSearchItemTotal() global native
 
 Function ClearSectionSearch() global native
+
+Function PerformanceCounterBegin() global native
+
+Function PerformanceCounterEnd() global native
+
+int Function SortDisplays_SKSE(Formlist flSection, Formlist flItems, Int iItemTotal, ObjectReference oCont, ObjectReference akActionRef, bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE) global native

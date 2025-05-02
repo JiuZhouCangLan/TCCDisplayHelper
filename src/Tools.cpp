@@ -76,9 +76,19 @@ bool IsEquipped(RE::Actor* actor, RE::TESForm* object)
 	return false;
 }
 
+int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::TESForm* form)
+{
+	for (const auto& [item, data] : inventory) {
+		const auto& [count, entry] = data;
+		if (item == form) {
+			return count;
+		}
+	}
+	return 0;
+}
+
 int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::BGSListForm* formlist)
 {
-	using namespace clib_util::editorID;
 	int total = 0;
 	for (const auto& [item, data] : inventory) {
 		const auto& [count, entry] = data;
@@ -87,4 +97,52 @@ int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::BGSLi
 		}
 	}
 	return total;
+}
+
+constexpr auto          DBM_REPLICABASEITEMS = "DBM_ReplicaBaseItems";
+constexpr auto          DBM_REPLICAITEMS = "DBM_ReplicaItems";
+static RE::BGSListForm* DBM_ReplicaBaseItems = nullptr;
+static RE::BGSListForm* DBM_ReplicaItems = nullptr;
+
+RE::TESForm* getReplica(RE::TESForm* form)
+{
+	static bool           hasError = false;
+	static std::once_flag callFlag;
+	std::call_once(callFlag, []() {
+		GET_VARIANT(RE::BGSListForm, DBM_ReplicaBaseItems, DBM_REPLICABASEITEMS, "{} is invalid, {}:getReplica will not work");
+		GET_VARIANT(RE::BGSListForm, DBM_ReplicaItems, DBM_REPLICAITEMS, "{} is invalid, {}:getReplica will not work");
+	});
+
+	if (hasError) {
+		return nullptr;
+	}
+
+	auto&      baseItems = DBM_ReplicaBaseItems->forms;
+	const auto baseIt = std::find(baseItems.begin(), baseItems.end(), form);
+	if (baseIt == baseItems.end()) {
+		return nullptr;
+	}
+	const int index = static_cast<int>(std::distance(baseItems.begin(), baseIt));
+
+	return DBM_ReplicaItems->forms[index];
+}
+
+bool itemIsFavorited(RE::TESForm* form)
+{
+	const auto player = RE::PlayerCharacter::GetSingleton();
+
+	if (player == nullptr) {
+		logger::error("can not get player instance");
+		return false;
+	}
+
+	auto inv = player->GetInventory();
+	for (const auto& [item, data] : inv) {
+		const auto& [count, entry] = data;
+		if (form == item) {
+			return entry->IsFavorited();
+		}
+	}
+
+	return false;
 }

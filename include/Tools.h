@@ -12,4 +12,10 @@ void FormListSub(RE::BGSListForm* target, RE::BGSListForm* source);
 
 bool IsEquipped(RE::Actor* actor, RE::TESForm* object);
 
+int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::TESForm* form);
+
 int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::BGSListForm* formlist);
+
+RE::TESForm* getReplica(RE::TESForm* form);
+
+bool itemIsFavorited(RE::TESForm* form);

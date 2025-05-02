@@ -164,7 +164,7 @@ Auto State Ready
 			While (NextSectionSearchResult())
 				FormList[] aSectionFormLists = GetSectionSearchFormList()
 				int iItemTotal = GetSectionSearchItemTotal()
-				
+
 				int iListNewDisplays = (SortDisplays(aSectionFormLists[0], aSectionFormLists[1], aSectionFormLists[2], iItemTotal, akActionRef))
 				; If we added any new displays, send a mod event. 
 				if (iListNewDisplays && useSKSE)
@@ -227,69 +227,10 @@ Int Function SortDisplays(Formlist flSection, Formlist flItems,Formlist flItemsA
 	elseif DBM_SortingJewelry.HasForm(flSection)
 		oCont = JewleryCabinet
 	endif
+	
+	int iNewDisplays = SortDisplays_SKSE(flSection, flItems, iItemTotal, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE)
 
-	int iIndex = flSection.GetSize()
-	int iCur = 0
-	int iNewDisplays = 0
-	
-	while iCur < iIndex && iItemTotal
-		Form fDisp = flSection.GetAt(iCur) ;;Account for ObjectReference as Formlist!!!!
-		
-		if fDisp as Formlist
-			Formlist flDisp = fDisp as Formlist
-			;DBMDebug.Log(Self, "Found display formlist "+ flDisp+" at index "+iCur)
-			Form flItem = flItems.GetAt(iCur)
-			Int iDisps = flDisp.GetSize()
-			while iDisps
-				iDisps -= 1
-				ObjectReference Disp = flDisp.GetAt(iDisps) as ObjectReference
-				Form Item = flItem
-				if flItem as FormList
-					Item = (flItem as Formlist).GetAt(iDisps)
-					;DBMDebug.Log(Self, "Checking item "+ Item.GetName()+Item +" for display "+Disp)
-				endif
-				;DBMDebug.Log(Self, "Decreasing item total by "+ akActionRef.GetItemCount(Item) +" for item "+Item.GetName()+Item)
-				iItemTotal -= akActionRef.GetItemCount(Item) ;Decrease the total items to check
-				Form Replica = DBM_Replicas.GetReplica(Item)
-				if Replica
-					if Replica as formlist
-						Replica = (Replica as Formlist).GetAt(iDisps)
-					endif
-					;DBMDebug.Log(Self, "Decreasing item total by "+ akActionRef.GetItemCount(Item) +" for replica "+Replica.GetName()+Replica)
-					iItemTotal -= akActionRef.GetItemCount(Replica) ;Decrease for the replicas too.
-					;if !flItemsAlt || !flItemsAlt.HasForm(Replica)
-						;flItemsAlt.AddForm(Replica)
-						;DBMDebug.Log(Self, "Adding "+Replica+" to "+flItemsAlt+" as it was missing.")
-					;endif
-				endif
-				iNewDisplays += CheckDisplay(Disp, Item, Replica, oCont, akActionRef)
-				if !Disp.IsDisabled()
-					iDisps = 0
-					;DBMDebug.Log(Self, "Found item from formlist of displays." + Item.GetName()+Item)
-				endif
-				;DBMDebug.Log(Self, "Item total remaining: "+iItemTotal)
-			endwhile
-		else
-			ObjectReference Disp = fDisp as ObjectReference
-			Form Item = flItems.GetAt(iCur)
-			;DBMDebug.Log(Self, "Decreasing item total by "+ akActionRef.GetItemCount(Item) +" for item "+Item.GetName()+Item)
-			iItemTotal -= akActionRef.GetItemCount(Item) ;Decrease the total items to check
-			Form Replica = DBM_Replicas.GetReplica(Item)
-			if Replica
-				;DBMDebug.Log(Self, "Decreasing item total by "+ akActionRef.GetItemCount(Item) +" for replica "+Replica.GetName()+Replica)
-				iItemTotal -= akActionRef.GetItemCount(Replica) ;Decrease for the replicas too.
-				;if !flItemsAlt || !flItemsAlt.HasForm(Replica)
-					;flItemsAlt.AddForm(Replica)
-					;DBMDebug.Log(Self, "Adding "+Replica+" to "+flItemsAlt+" as it was missing.")
-				;endif
-			endif
-			
-			iNewDisplays += CheckDisplay(Disp, Item, Replica, oCont, akActionRef) ;should return 0 or 1
-			;DBMDebug.Log(Self, "Item total remaining: "+iItemTotal)
-		endif
-		iCur += 1
-	endwhile
-	
+
 ;	if Sharing.IsSharingOn
 ;		Sharing.UpdateSingleDisplayList(flSection)
 ;    endif
