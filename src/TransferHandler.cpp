@@ -1,5 +1,5 @@
 #include "TransferHandler.h"
-#include "DisplayHandler.h"
+#include "Tools.h"
 
 #define GET_FORMLIST_LOG(variable, editorID) GET_VARIANT(RE::BGSListForm, variable, editorID, "{} is invalid, {}:TransferHandler will not work")
 
@@ -29,26 +29,6 @@ namespace Papyrus::Functions::TransferHandler
 		});
 
 		return !hasError;
-	}
-
-	bool IsEquipped(RE::Actor* actor, RE::TESForm* object)
-	{
-		if (actor == nullptr || object == nullptr) {
-			return false;
-		}
-
-		if (actor->GetEquippedObject(true) == object || actor->GetEquippedObject(false) == object) {
-			return true;
-		}
-
-		for (int i = 0; i < 32; i++) {
-			auto* armor = actor->GetInventoryChanges()->GetArmorInSlot(i + 30);
-			if (armor == object) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	int CustomTransfer(STATIC_ARGS, RE::TESObjectREFR* DBM_AutoSortDropOff, std::vector<RE::TESObjectREFR*> TokenRefList_NoShipment)
@@ -104,8 +84,7 @@ namespace Papyrus::Functions::TransferHandler
 			const auto inv = container->GetInventory();
 			for (const auto& [item, data] : inv) {
 				const auto& [numItem, entry] = data;
-				if (numItem <= 0)
-				{
+				if (numItem <= 0) {
 					continue;
 				}
 				auto* itemRelic = entry->GetObject()->As<RE::TESForm>();
@@ -181,19 +160,6 @@ namespace Papyrus::Functions::TransferHandler
 	};
 	static std::vector<ResultItem> searchResult;
 	static int                     resultAccessIndex = -1;
-
-	int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::BGSListForm* formlist)
-	{
-		using namespace clib_util::editorID;
-		int total = 0;
-		for (const auto& [item, data] : inventory) {
-			const auto& [count, entry] = data;
-			if (formlist->HasForm(item)) {
-				total += count;
-			}
-		}
-		return total;
-	}
 
 	bool DBMSectionSearch(STATIC_ARGS, std::vector<RE::BGSListForm*> RoomList, std::vector<std::string> RoomNames, RE::TESObjectREFR* akActionRef)
 	{
@@ -396,6 +362,21 @@ namespace Papyrus::Functions::TransferHandler
 		resultAccessIndex = -1;
 	}
 
+	static std::chrono::steady_clock::time_point BeginTimeStamp;
+
+	void PerformanceCounterBegin(STATIC_ARGS)
+	{
+		logger::debug("{} called", __FUNCTION__);
+		BeginTimeStamp = std::chrono::high_resolution_clock::now();
+	}
+
+	void PerformanceCounterEnd(STATIC_ARGS)
+	{
+		logger::debug("{} called", __FUNCTION__);
+		auto end = std::chrono::high_resolution_clock::now();
+		logger::info("{}ms cost", (end - BeginTimeStamp).count() / 1000LL / 1000LL);
+	}
+
 	void Bind(VM& a_vm)
 	{
 		BIND(CustomTransfer);
@@ -408,5 +389,8 @@ namespace Papyrus::Functions::TransferHandler
 		BIND(GetSectionSearchFormList);
 		BIND(GetSectionSearchItemTotal);
 		BIND(ClearSectionSearch);
+
+		BIND(PerformanceCounterBegin);
+		BIND(PerformanceCounterEnd);
 	}
 }

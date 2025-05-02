@@ -1,5 +1,6 @@
 #include "DisplayHandler.h"
 #include "ClibUtil/editorID.hpp"
+#include "Tools.h"
 
 #define GET_FORMLIST_LOG(variable, editorID) GET_VARIANT(RE::BGSListForm, variable, editorID, "{} is invalid, {}:DisplayHandler will not work")
 
@@ -23,14 +24,6 @@ namespace Papyrus::Functions::DisplayHandler
 	static RE::BGSListForm*     dbmMaster = nullptr;
 	static RE::BGSListForm*     _MuseumContainerList = nullptr;
 	static std::recursive_mutex ReplicaMutex;
-
-	void printFormList(RE::BGSListForm* formlist)
-	{
-		using namespace clib_util::editorID;
-		for (const auto& form : formlist->forms) {
-			logger::info("{} {}", get_editorID(form), form->GetName());
-		}
-	}
 
 	static bool init()
 	{
@@ -79,54 +72,6 @@ namespace Papyrus::Functions::DisplayHandler
 		return !hasError;
 	}
 
-	int FormListLevel2Search(STATIC_ARGS, RE::TESForm* a_form, RE::BGSListForm* a_list)
-	{
-		logger::debug("{} called", __FUNCTION__);
-		using namespace RE;
-
-		if (a_form == nullptr || a_list == nullptr) {
-			logger::error("FormListDeepSearch: invalid parameters");
-			return false;
-		}
-
-		std::vector<std::pair<RE::BGSListForm*, int>> subFormLists;
-		for (int i = 0, size = a_list->forms.size(); i < size; ++i) {
-			auto* form = a_list->forms[i];
-			if (form == a_form) {
-				return i;
-			} else if (form->GetFormType() == FormType::FormList) {
-				subFormLists.push_back({ static_cast<RE::BGSListForm*>(form), i });
-			}
-		}
-
-		for (const auto& [list, listIndex] : subFormLists) {
-			const auto idIt = std::find(list->forms.begin(), list->forms.end(), a_form);
-			if (idIt != list->forms.end()) {
-				return listIndex;
-			}
-		}
-
-		return -1;
-	}
-
-	void FormListAdd(STATIC_ARGS, RE::BGSListForm* target, RE::BGSListForm* source)
-	{
-		logger::debug("{} called", __FUNCTION__);
-		for (const auto& form : source->forms) {
-			if (!target->HasForm(form)) {
-				target->AddForm(form);
-			}
-		}
-	}
-
-	void FormListSub(STATIC_ARGS, RE::BGSListForm* target, RE::BGSListForm* source)
-	{
-		logger::debug("{} called", __FUNCTION__);
-		for (const auto& form : source->forms) {
-			target->RemoveAddedForm(form);
-		}
-	}
-
 	void ReplicaAndVariantsAddHandler(STATIC_ARGS, RE::TESForm* a_form)
 	{
 		if (!init()) {
@@ -144,9 +89,9 @@ namespace Papyrus::Functions::DisplayHandler
 
 		// (DBM) Items with Replica
 		bool isReplica = false;
-		auto dbmIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, DBM_ReplicaBaseItems);
+		auto dbmIndex = FormListLevel2Search(a_form, DBM_ReplicaBaseItems);
 		if (dbmIndex == -1) {  // not a replica base item
-			dbmIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, DBM_ReplicaItems);
+			dbmIndex = FormListLevel2Search(a_form, DBM_ReplicaItems);
 			isReplica = true;
 		}
 		if (dbmIndex != -1) {
@@ -159,9 +104,9 @@ namespace Papyrus::Functions::DisplayHandler
 				if (baseForm->GetFormType() == FormType::FormList) {
 					logger::debug("adding replica base item list: {}", get_editorID(baseForm));
 					auto* baseFormList = static_cast<RE::BGSListForm*>(baseForm);
-					FormListAdd(PASS_STATIC_ARGS, dbmDisp, baseFormList);
-					FormListSub(PASS_STATIC_ARGS, dbmFound, baseFormList);
-					FormListSub(PASS_STATIC_ARGS, dbmNew, baseFormList);
+					FormListAdd(dbmDisp, baseFormList);
+					FormListSub(dbmFound, baseFormList);
+					FormListSub(dbmNew, baseFormList);
 				} else if (!dbmDisp->HasForm(baseForm)) {
 					logger::debug("adding replica base item: {}", baseForm->GetName());
 					dbmDisp->AddForm(baseForm);
@@ -175,9 +120,9 @@ namespace Papyrus::Functions::DisplayHandler
 				if (replicaForm->GetFormType() == FormType::FormList) {
 					logger::debug("adding replica item list: {}", get_editorID(replicaForm));
 					auto* replicaFormList = static_cast<RE::BGSListForm*>(replicaForm);
-					FormListAdd(PASS_STATIC_ARGS, dbmDisp, replicaFormList);
-					FormListSub(PASS_STATIC_ARGS, dbmFound, replicaFormList);
-					FormListSub(PASS_STATIC_ARGS, dbmNew, replicaFormList);
+					FormListAdd(dbmDisp, replicaFormList);
+					FormListSub(dbmFound, replicaFormList);
+					FormListSub(dbmNew, replicaFormList);
 				} else if (!dbmDisp->HasForm(replicaForm)) {
 					logger::debug("adding replica item: {}", replicaForm->GetName());
 					dbmDisp->AddForm(replicaForm);
@@ -189,16 +134,16 @@ namespace Papyrus::Functions::DisplayHandler
 		}
 
 		// Other items with variants
-		const auto variantIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, ItemsWithVariants);
+		const auto variantIndex = FormListLevel2Search(a_form, ItemsWithVariants);
 		if (variantIndex != -1) {
 			auto* variantList = ItemsWithVariants->forms[variantIndex];
 			if (variantList->GetFormType() == FormType::FormList) {
 				std::lock_guard<std::recursive_mutex> locker(ReplicaMutex);
 				logger::debug("adding variants: {}", get_editorID(variantList));
 				auto* formList = static_cast<RE::BGSListForm*>(variantList);
-				FormListAdd(PASS_STATIC_ARGS, dbmDisp, formList);
-				FormListSub(PASS_STATIC_ARGS, dbmFound, formList);
-				FormListSub(PASS_STATIC_ARGS, dbmNew, formList);
+				FormListAdd(dbmDisp, formList);
+				FormListSub(dbmFound, formList);
+				FormListSub(dbmNew, formList);
 			}
 		}
 	}
@@ -220,9 +165,9 @@ namespace Papyrus::Functions::DisplayHandler
 
 		// (DBM) Items with Replica
 		bool isReplica = false;
-		auto dbmIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, DBM_ReplicaBaseItems);
+		auto dbmIndex = FormListLevel2Search(a_form, DBM_ReplicaBaseItems);
 		if (dbmIndex == -1) {  // not a replica base item
-			dbmIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, DBM_ReplicaItems);
+			dbmIndex = FormListLevel2Search(a_form, DBM_ReplicaItems);
 			isReplica = true;
 		}
 		if (dbmIndex != -1) {
@@ -234,12 +179,12 @@ namespace Papyrus::Functions::DisplayHandler
 				if (baseForm->GetFormType() == FormType::FormList) {
 					logger::debug("removing replica base item list: {}", get_editorID(baseForm));
 					auto* baseFormList = static_cast<RE::BGSListForm*>(baseForm);
-					FormListSub(PASS_STATIC_ARGS, dbmDisp, baseFormList);
+					FormListSub(dbmDisp, baseFormList);
 
 					if (std::find(TokenRefList.begin(), TokenRefList.end(), akContainer) == TokenRefList.end()) {
-						FormListAdd(PASS_STATIC_ARGS, dbmNew, baseFormList);
+						FormListAdd(dbmNew, baseFormList);
 					} else {
-						FormListAdd(PASS_STATIC_ARGS, dbmFound, baseFormList);
+						FormListAdd(dbmFound, baseFormList);
 					}
 				} else if (dbmDisp->HasForm(baseForm)) {
 					logger::debug("removing replica base item: {}", baseForm->GetName());
@@ -258,12 +203,12 @@ namespace Papyrus::Functions::DisplayHandler
 				if (replicaForm->GetFormType() == FormType::FormList) {
 					logger::debug("removing replica item list: {}", get_editorID(replicaForm));
 					auto* replicaFormList = static_cast<RE::BGSListForm*>(replicaForm);
-					FormListSub(PASS_STATIC_ARGS, dbmDisp, replicaFormList);
+					FormListSub(dbmDisp, replicaFormList);
 
 					if (std::find(TokenRefList.begin(), TokenRefList.end(), akContainer) == TokenRefList.end()) {
-						FormListAdd(PASS_STATIC_ARGS, dbmNew, replicaFormList);
+						FormListAdd(dbmNew, replicaFormList);
 					} else {
-						FormListAdd(PASS_STATIC_ARGS, dbmFound, replicaFormList);
+						FormListAdd(dbmFound, replicaFormList);
 					}
 				} else if (dbmDisp->HasForm(replicaForm)) {
 					logger::debug("removing replica base item: {}", replicaForm->GetName());
@@ -280,18 +225,18 @@ namespace Papyrus::Functions::DisplayHandler
 		}
 
 		// Other items with variants
-		const auto variantIndex = FormListLevel2Search(PASS_STATIC_ARGS, a_form, ItemsWithVariants);
+		const auto variantIndex = FormListLevel2Search(a_form, ItemsWithVariants);
 		if (variantIndex != -1) {
 			auto* variantList = ItemsWithVariants->forms[variantIndex];
 			if (variantList->GetFormType() == FormType::FormList) {
 				logger::debug("removing variants: {}", get_editorID(variantList));
 				auto* formlist = static_cast<RE::BGSListForm*>(variantList);
-				FormListSub(PASS_STATIC_ARGS, dbmDisp, formlist);
+				FormListSub(dbmDisp, formlist);
 
 				if (std::find(TokenRefList.begin(), TokenRefList.end(), akContainer) == TokenRefList.end()) {
-					FormListAdd(PASS_STATIC_ARGS, dbmNew, formlist);
+					FormListAdd(dbmNew, formlist);
 				} else {
-					FormListAdd(PASS_STATIC_ARGS, dbmFound, formlist);
+					FormListAdd(dbmFound, formlist);
 				}
 			}
 		}

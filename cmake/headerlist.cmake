@@ -3,4 +3,5 @@ set(headers ${headers}
 	include/Common.h
 	include/DisplayHandler.h
 	include/TransferHandler.h
+	include/Tools.h
 )
