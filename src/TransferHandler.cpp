@@ -104,6 +104,10 @@ namespace Papyrus::Functions::TransferHandler
 			const auto inv = container->GetInventory();
 			for (const auto& [item, data] : inv) {
 				const auto& [numItem, entry] = data;
+				if (numItem <= 0)
+				{
+					continue;
+				}
 				auto* itemRelic = entry->GetObject()->As<RE::TESForm>();
 				if (dbmMaster->HasForm(itemRelic) && !dbmDisp->HasForm(itemRelic)) {
 					bool transferable = false;
