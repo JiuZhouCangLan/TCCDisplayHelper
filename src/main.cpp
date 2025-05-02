@@ -1,3 +1,4 @@
+#include "DBMSortHandler.h"
 #include "DisplayHandler.h"
 #include "TransferHandler.h"
 
@@ -80,6 +81,7 @@ namespace Papyrus
 
 		Functions::DisplayHandler::Bind(*a_vm);
 		Functions::TransferHandler::Bind(*a_vm);
+		Functions::DBMSortHandler::Bind(*a_vm);
 		return true;
 	}
 }
