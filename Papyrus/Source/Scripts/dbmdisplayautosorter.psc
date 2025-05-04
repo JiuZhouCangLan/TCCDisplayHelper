@@ -228,8 +228,7 @@ Int Function SortDisplays(Formlist flSection, Formlist flItems,Formlist flItemsA
 		oCont = JewleryCabinet
 	endif
 	
-	int iNewDisplays = SortDisplays_SKSE(flSection, flItems, iItemTotal, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE)
-
+	int iNewDisplays = SortDisplays_SKSE(Self, flSection, flItems, iItemTotal, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE)
 
 ;	if Sharing.IsSharingOn
 ;		Sharing.UpdateSingleDisplayList(flSection)

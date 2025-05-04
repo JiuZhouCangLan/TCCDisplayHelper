@@ -31,4 +31,4 @@ Function PerformanceCounterBegin() global native
 
 Function PerformanceCounterEnd() global native
 
-int Function SortDisplays_SKSE(Formlist flSection, Formlist flItems, Int iItemTotal, ObjectReference oCont, ObjectReference akActionRef, bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE) global native
+int Function SortDisplays_SKSE(ObjectReference akSelf, Formlist flSection, Formlist flItems, Int iItemTotal, ObjectReference oCont, ObjectReference akActionRef, bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE) global native
