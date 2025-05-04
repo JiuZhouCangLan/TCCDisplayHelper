@@ -16,6 +16,8 @@ int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::TESFo
 
 int getItemCount(const RE::TESObjectREFR::InventoryItemMap& inventory, RE::BGSListForm* formlist);
 
-RE::TESForm* getReplica(RE::TESForm* form);
+RE::TESForm* GetReplica(RE::TESForm* form);
 
 bool itemIsFavorited(RE::TESForm* form);
+
+void SendDisplayEvent(Papyrus::VM* vm, RE::TESForm* fSender, RE::TESObjectREFR* oDisplay, RE::TESForm* fItem, bool bEnabled);

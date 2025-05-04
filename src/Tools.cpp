@@ -104,7 +104,8 @@ constexpr auto          DBM_REPLICAITEMS = "DBM_ReplicaItems";
 static RE::BGSListForm* DBM_ReplicaBaseItems = nullptr;
 static RE::BGSListForm* DBM_ReplicaItems = nullptr;
 
-RE::TESForm* getReplica(RE::TESForm* form)
+// c++ implementation for Function GetReplica in LOTD dbm_replicahandler.psc
+RE::TESForm* GetReplica(RE::TESForm* form)
 {
 	static bool           hasError = false;
 	static std::once_flag callFlag;
@@ -145,4 +146,20 @@ bool itemIsFavorited(RE::TESForm* form)
 	}
 
 	return false;
+}
+
+// call papyrus Function SendDisplayEvent in LOTD dbmdebug.psc
+void SendDisplayEvent(Papyrus::VM* vm, RE::TESForm* fSender, RE::TESObjectREFR* oDisplay, RE::TESForm* fItem, bool bEnabled)
+{
+	RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor> result;
+
+	auto args = RE::MakeFunctionArguments(
+		std::move(fSender),
+		std::move(oDisplay),
+		std::move(fItem),
+		std::move(bEnabled));
+	const bool callRet = vm->DispatchStaticCall("DBMDebug", "SendDisplayEvent", args, result);
+	if (!callRet) {
+		logger::error("call SendDisplayEvent fail");
+	}
 }

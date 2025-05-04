@@ -39,6 +39,7 @@ namespace Papyrus::Functions::DBMSortHandler
 		return !hasError;
 	}
 
+	// c++ implementation for Function RemoveRadiantForm in LOTD dbm_replicahandler.psc
 	void RemoveRadiantForm(RE::TESForm* form)
 	{
 		if (!init()) {
@@ -212,7 +213,7 @@ namespace Papyrus::Functions::DBMSortHandler
 		logger::info("{}ms cost", (end - BeginTimeStamp).count() / 1000LL / 1000LL);
 	}
 
-	int CheckDisplay(RE::TESObjectREFR* Disp, RE::TESForm* item, RE::TESForm* replica, RE::TESObjectREFR* oCont, RE::TESObjectREFR* akActionRef,
+	int CheckDisplay(Papyrus::VM* vm, RE::TESForm* aSelf, RE::TESObjectREFR* Disp, RE::TESForm* item, RE::TESForm* replica, RE::TESObjectREFR* oCont, RE::TESObjectREFR* akActionRef,
 		bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE)
 	{
 		if (!init()) {
@@ -250,7 +251,7 @@ namespace Papyrus::Functions::DBMSortHandler
 					Disp->Enable(false);
 					logger::debug("Displayed replica {}:{} for {}", replica->GetName(), get_editorID(replica), Disp->GetName());
 					if (useSKSE) {
-						//!TODO DBMDebug.SendDisplayEvent(Self, Disp, Replica, true)
+						SendDisplayEvent(vm, aSelf, Disp, replica, true);
 					}
 					return 1;
 				}
@@ -282,7 +283,7 @@ namespace Papyrus::Functions::DBMSortHandler
 					Disp->Enable(false);
 					logger::debug("Displayed item {}:{} for {}", item->GetName(), get_editorID(item), Disp->GetName());
 					if (useSKSE) {
-						//!TODO DBMDebug.SendDisplayEvent(Self, Disp, item, true)
+						SendDisplayEvent(vm, aSelf, Disp, item, true);
 					}
 					return 1;
 				}
@@ -307,7 +308,7 @@ namespace Papyrus::Functions::DBMSortHandler
 		return 0;
 	}
 
-	int SortDisplays_SKSE(STATIC_ARGS, RE::BGSListForm* flSection, RE::BGSListForm* flItems, int iItemTotal, RE::TESObjectREFR* oCont, RE::TESObjectREFR* akActionRef, bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE)
+	int SortDisplays_SKSE(STATIC_ARGS, RE::TESObjectREFR* aSelf, RE::BGSListForm* flSection, RE::BGSListForm* flItems, int iItemTotal, RE::TESObjectREFR* oCont, RE::TESObjectREFR* akActionRef, bool bPreferReplicas, bool bOnlyReplicas, bool bQuestItemsProtected, bool useSKSE)
 	{
 		if (!init()) {
 			return 0;
@@ -330,7 +331,7 @@ namespace Papyrus::Functions::DBMSortHandler
 						item = flItemList->forms[iDisps];
 					}
 					iItemTotal -= getItemCount(akActionRef->GetInventory(), item);
-					auto replica = getReplica(item);
+					auto replica = GetReplica(item);
 					if (replica != nullptr) {
 						auto replicafl = replica->As<RE::BGSListForm>();
 						if (replicafl != nullptr) {
@@ -339,17 +340,17 @@ namespace Papyrus::Functions::DBMSortHandler
 						iItemTotal -= getItemCount(akActionRef->GetInventory(), replica);
 					}
 
-					iNewDisplays += CheckDisplay(Disp, item, replica, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE);
+					iNewDisplays += CheckDisplay(a_vm, aSelf, Disp, item, replica, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE);
 				}
 			} else {
 				auto Disp = fDisp->AsReference();
 				auto item = flItems->forms[iCur];
 				iItemTotal -= getItemCount(akActionRef->GetInventory(), item);
-				auto replica = getReplica(item);
+				auto replica = GetReplica(item);
 				if (replica != nullptr) {
 					iItemTotal -= getItemCount(akActionRef->GetInventory(), replica);
 				}
-				iNewDisplays += CheckDisplay(Disp, item, replica, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE);
+				iNewDisplays += CheckDisplay(a_vm, aSelf, Disp, item, replica, oCont, akActionRef, bPreferReplicas, bOnlyReplicas, bQuestItemsProtected, useSKSE);
 			}
 
 			if (iItemTotal <= 0) {
