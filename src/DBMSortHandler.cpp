@@ -323,7 +323,7 @@ namespace Papyrus::Functions::DBMSortHandler
 			if (flDisp != nullptr) {
 				auto flItem = flItems->forms[iCur];
 
-				for (int iDisps = flDisp->forms.size(); iDisps >= 0; --iDisps) {
+				for (int iDisps = flDisp->forms.size() - 1; iDisps >= 0; --iDisps) {
 					auto Disp = flDisp->forms[iDisps]->AsReference();
 					auto item = flItem;
 					auto flItemList = flItem->As<RE::BGSListForm>();
